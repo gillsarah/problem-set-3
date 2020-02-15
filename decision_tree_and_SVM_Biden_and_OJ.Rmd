@@ -12,9 +12,14 @@ setwd("~/Documents/GitHub/problem-set-3")
 
 ```{r library}
 library(readr)
+library(rsample)
 library(tidyverse)
-library(rcfss)
+#library(rcfss)
 library(gbm)
+library(ipred) 
+library(rpart)
+library(randomForest)
+library(ISLR)
 #library(dplyr)
 ```
 
@@ -30,12 +35,19 @@ lambda <- seq(from = 0.0001, to = 0.04, by = 0.001)
 
 2. Create a training set consisting of 75% of the observations, and a test set with all remaining obs. 
 ```{r 2}
-nes_samples <- sample(1:nrow(nes2008_df), 
-                  nrow(nes2008_df)*0.75, 
-                  replace = FALSE)
+split <- initial_split(nes2008_df, prop = 0.75)
 
-train <- nes2008_df[nes_samples, ]
-test <- nes2008_df[-nes_samples, ]
+train <- training(split)
+
+test <- testing(split)
+
+
+#nes_samples <- sample(1:nrow(nes2008_df), 
+#                  nrow(nes2008_df)*0.75, 
+ #                 replace = FALSE)
+
+#train <- nes2008_df[nes_samples, ]
+#test <- nes2008_df[-nes_samples, ]
 ```
 
 3. Create empty objects to store training and testing MSE, and then write a loop to perform boosting on the training set with 1,000 trees for the pre-defined range of values of the shrinkage parameter, lambda.
@@ -133,4 +145,91 @@ Discuss.....
 
 5.  Now apply bagging to the training set. What is the test set MSE for this approach?
 ```{r 5}
+biden_bag1 <- bagging(
+  formula = biden ~ .,
+  data = train,
+  nbagg = 100,  
+  coob = TRUE,
+  control = rpart.control(minsplit = 2, cp = 0)
+)
+
+preds = predict(biden_bag1, newdata=train)
+mse_test_bag = mean((preds - test$biden)^2)
+mse_test_bag
+#site https://bradleyboehmke.github.io/HOML/bagging.html
+```
+
+
+6. Now apply random forest to the training set. What is the test set MSE for this approach?
+```{r}
+rf_biden <- randomForest(biden ~ ., #response featrue regressed on all the other featrues
+                   data = test)
+
+preds = predict(rf_biden, newdata=train)
+mse_test_rf = mean((preds - test$biden)^2)
+mse_test_rf
+
+#same
+MSE(y_pred = preds, y_true = test$biden)
+
+#same
+mean((test$biden - predict(rf_biden, train)) ^ 2)
+```
+
+report.....
+682.819
+Now  601.565 (different sampleing method!)
+
+7. Now apply linear regression to the training set. What is the test set MSE for this approach?
+```{r}
+
+```
+
+
+8. Compare test errors across all fits. Discuss which approach generally fits best and how you
+concluded this.
+```{r}
+
+```
+
+
+Support Vector Machines
+
+1. Create a training set with a random sample of size 800, and a test set containing the remaining observations.
+```{r}
+#OJ
+samples=sample(1:nrow(OJ),800)
+train_oj <- OJ[samples, ]
+test_oj <- OJ[-samples, ]
+
+```
+
+2. Fit a support vector classifier to the training data with cost = 0.01, with Purchase as the response and all other features as predictors. Discuss the results.
+```{r}
+svm_oj <- svm(Purchase ~ ., 
+             data = train_oj, 
+             kernel = "linear", 
+             cost = 0.01,  
+             scale = TRUE); summary(svm_oj) 
+
+#table(true = OJ$Purchase, 
+ #     pred = predict(svm_oj, 
+  #                   newdata = train_oj))
+```
+
+discuss...
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
 
