@@ -1,0 +1,136 @@
+---
+title: "Biden Sentamant  and OJ Trees and SVMs"
+author: "Sarah Gill"
+date: "2/15/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("~/Documents/GitHub/problem-set-3")
+```
+
+```{r library}
+library(readr)
+library(tidyverse)
+library(rcfss)
+library(gbm)
+#library(dplyr)
+```
+
+1. Set up the data and store some things for later use:
+```{r data}
+set.seed(13579)
+nes2008_df <- read_csv("data/nes2008.csv")
+
+p <- subset(nes2008_df,select = -c(biden))
+lambda <- seq(from = 0.0001, to = 0.04, by = 0.001)
+  
+```
+
+2. Create a training set consisting of 75% of the observations, and a test set with all remaining obs. 
+```{r 2}
+nes_samples <- sample(1:nrow(nes2008_df), 
+                  nrow(nes2008_df)*0.75, 
+                  replace = FALSE)
+
+train <- nes2008_df[nes_samples, ]
+test <- nes2008_df[-nes_samples, ]
+```
+
+3. Create empty objects to store training and testing MSE, and then write a loop to perform boosting on the training set with 1,000 trees for the pre-defined range of values of the shrinkage parameter, lambda.
+```{r 3}
+mses_train <- c()
+mses_test <- c()
+
+for (i in lambda){
+  
+boost.biden <- gbm(biden ~ ., 
+                    data=train,
+                    distribution="gaussian", #assuming distribution is gaussian
+                    n.trees=1000, #do it 10000 times
+                    shrinkage=i, #penalize here, this is a calssic value
+                    interaction.depth = 4) #d, how many nodes to have
+#deapth must be smaller than number of features
+#2-5 is pretty standard for d 
+
+
+#n.trees = seq(from=100,to=10000, by=100)
+preds = predict(boost.biden, newdata=train, n.trees = 1000)
+                 # shrinkage = lambda)
+
+mse_train = mean((preds - train$biden)^2)
+  #with(train, apply((preds - biden)^2, 2, mean))
+mses_train <- append(mses_train, mse_train)
+
+mse_test = mean((preds - test$biden)^2)
+mses_test <- append(mses_test, mse_test)
+}
+
+
+```
+ Then, plot the training set and test set MSE across shrinkage values.
+
+
+```{r}
+
+plot(lambda, mses_train,
+     pch=19,
+     ylab="Mean Squared Error", 
+     xlab="shrinkage",
+     main="Boosting Test Error")
+```
+```{r}
+plot(lambda, mses_test,
+     pch=19,
+     ylab="Mean Squared Error", 
+     xlab="shrinkage",
+     main="Boosting Train Error")
+```
+
+
+4. (10 points) The test MSE values are insensitive to some precise value of lambda as long as its small enough.
+Update the boosting procedure by setting lambda equal to 0.01 (but still over 1000 trees). Report the test MSE and discuss the results. How do they compare?
+```{r}
+boost.biden <- gbm(biden ~ ., 
+                    data=train,
+                    distribution="gaussian", #assuming distribution is gaussian
+                    n.trees=1000, #do it 10000 times
+                    shrinkage=0.01, #penalize here, this is a calssic value
+                    interaction.depth = 4) #d, how many nodes to have
+#deapth must be smaller than number of features
+#2-5 is pretty standard for d 
+
+preds = predict(boost.biden, newdata=train, n.trees = 1000)
+
+mse_test_0.01 = mean((preds - test$biden)^2)
+mse_test_0.01
+
+plot(lambda, mses_train,
+     pch=19,
+     ylab="Mean Squared Error", 
+     xlab="shrinkage",
+     main="Boosting Test Error")
+
+```
+
+mse_test at shrinkage = 0.01 is 764.1437
+
+```{r}
+range(unlist(mses_test))
+mean(unlist(mses_test))
+```
+
+Ranges from
+570.0427 790.1103
+with a mean of
+761.7793
+
+so 
+
+Discuss.....
+
+
+5.  Now apply bagging to the training set. What is the test set MSE for this approach?
+```{r 5}
+
