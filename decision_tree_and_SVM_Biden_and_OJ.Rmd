@@ -5,12 +5,12 @@ date: "2/15/2020"
 output: pdf_document
 ---
 
-```{r setup}
-knitr::opts_chunk$set(cache = T)
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
 setwd("~/Documents/GitHub/problem-set-3")
 ```
 
-```{r library}
+```{r library, include=FALSE}
 library(readr)
 library(rsample)
 library(tidyverse)
@@ -194,7 +194,7 @@ The best fit appears to be the minimum found among using the shrinkage coefficie
 
 
 
-#Support Vector Machines
+# Support Vector Machines
 
 1. Create a training set with a random sample of size 800, and a test set containing the remaining observations.
 ```{r}
